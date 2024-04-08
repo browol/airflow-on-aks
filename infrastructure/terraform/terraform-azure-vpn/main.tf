@@ -9,7 +9,7 @@ locals {
   vnet_addr_prefix          = "10.0.0.0/16"
   subnet_addr_prefix        = "10.0.1.0/24"
   vpn_client_cidrs          = ["10.2.0.0/24"]
-  certificate_name          = "certs/root.crt"
+  certificate_name          = "certs/stripped.crt"
   tags = {
     client      = local.client
     environment = local.environment
@@ -146,6 +146,10 @@ resource "azurerm_key_vault_secret" "vpn_root_certificate" {
   depends_on = [
     azurerm_key_vault.kv,
   ]
+
+  provisioner "local-exec" {
+    command = "/bin/sh generate-certificate.sh"
+  }
 }
 
 # Create a Public IP for the Gateway
@@ -153,9 +157,9 @@ resource "azurerm_public_ip" "gateway_pip" {
   name                = module.naming.public_ip.name
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
+  sku                 = "Standard"
+  allocation_method   = "Static"
   tags                = local.tags
-
-  allocation_method   = "Dynamic"
 }
 
 # Create VPN Gateway
@@ -170,7 +174,8 @@ resource "azurerm_virtual_network_gateway" "gateway" {
 
   active_active = false
   enable_bgp    = false
-  sku           = "Basic"
+  sku           = "VpnGw2"
+  generation    = "Generation2"
 
   ip_configuration {
     name                          = module.naming.virtual_network.name
@@ -180,7 +185,12 @@ resource "azurerm_virtual_network_gateway" "gateway" {
   }
 
   vpn_client_configuration {
-    address_space = local.vpn_client_cidrs
+    address_space        = local.vpn_client_cidrs
+    vpn_auth_types       = ["AAD", "Certificate"]
+    vpn_client_protocols = ["OpenVPN"]
+    aad_tenant           = format("https://login.microsoftonline.com/%s", data.azurerm_client_config.current.tenant_id)
+    aad_issuer           = format("https://sts.windows.net/%s/", data.azurerm_client_config.current.tenant_id)
+    aad_audience         = "41b23e61-6c1e-4545-b367-cd054e0ed4b4" # Azure Public
 
     root_certificate {
       name             = "vpn-p2s-root-certificate"
@@ -201,9 +211,9 @@ resource "azurerm_virtual_network" "vnet" {
 
 # Create a Gateway Subnet
 resource "azurerm_subnet" "gateway" {
-  name                 = "GatewaySubnet" # do not change the name
-  resource_group_name  = azurerm_resource_group.rg.name
-  
+  name                = "GatewaySubnet" # do not change the name
+  resource_group_name = azurerm_resource_group.rg.name
+
   address_prefixes     = [local.subnet_addr_prefix]
   virtual_network_name = azurerm_virtual_network.vnet.name
 }

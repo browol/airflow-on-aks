@@ -17,3 +17,6 @@ openssl x509 -req -days 365 -in client.csr -CA root.crt -CAkey root.key -CAcreat
 
 # Verify client certificate with root certificate
 openssl verify -CAfile root.crt client.crt
+
+# Trim header and footer
+cat root.crt | sed -e 's#-----.*-----##g' | sed '1d' | sed '$d' > stripped.crt

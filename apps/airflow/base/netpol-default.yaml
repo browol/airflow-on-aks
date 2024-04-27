@@ -1,0 +1,106 @@
+---
+# deny all ingress and egress traffic
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all
+  labels:
+    component: default
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# allow ingress traffic within same namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-same-namespace
+  labels:
+    component: default
+spec:
+  podSelector: {}
+  ingress:
+    - {}
+  policyTypes:
+    - Ingress
+---
+# allow egress traffic within same namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-same-namespace
+  labels:
+    component: default
+spec:
+  podSelector: {}
+  egress:
+    - {}
+  policyTypes:
+    - Egress
+---
+# allow ingress from infra-ingress namespace only pod has app.kubernetes.io/component=controller label
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-ingress-from-ingress-namespace
+  labels:
+    component: default
+spec:
+  podSelector: {}
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: infra-ingress
+        - podSelector:
+            matchLabels:
+              app.kubernetes.io/component: controller
+  policyTypes:
+    - Ingress
+---
+# allow egress to kube-dns port 53 in kube-system namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-to-kube-dns
+  labels:
+    component: default
+spec:
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: kube-system
+        - podSelector:
+            matchLabels:
+              k8s-app: kube-dns
+      ports:
+        - protocol: UDP
+          port: 53
+        - protocol: TCP
+          port: 53
+  policyTypes:
+    - Egress
+---
+# allow egress to istiod in infra-istio-system namespace
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-egress-to-istiod
+  labels:
+    component: default
+spec:
+  podSelector: {}
+  egress:
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: infra-istio-system
+        - podSelector:
+            matchLabels:
+              k8s-app: istiod
+  policyTypes:
+    - Egress

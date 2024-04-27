@@ -1,0 +1,14 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Sidecar
+metadata:
+  name: restricted
+  namespace: airflow
+spec:
+  egress:
+    - hosts:
+        - "./*"
+        - "kube-system/*"
+        - "infra-ingress/*"
+        - "infra-istio-system/*"
+  outboundTrafficPolicy:
+    mode: REGISTRY_ONLY

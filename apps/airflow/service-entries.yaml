@@ -1,0 +1,109 @@
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: harvest-service
+spec:
+  hosts:
+    - api.harvestapp.com
+  addresses:
+    - 34.107.228.235/32
+  location: MESH_EXTERNAL
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: NONE
+  exportTo:
+    - "."
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: bigquery-service
+spec:
+  hosts:
+    - bigquery.googleapis.com
+  addresses:
+    - 34.107.228.235/32
+  location: MESH_EXTERNAL
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: NONE
+  exportTo:
+    - "."
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: googleapis-service
+spec:
+  hosts:
+    - googleapis.com
+  addresses:
+    - 172.217.174.164/32
+  location: MESH_EXTERNAL
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: NONE
+  exportTo:
+    - "."
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: facebook-graph-service
+spec:
+  hosts:
+    - graph.facebook.com
+  addresses:
+    - 163.70.132.1/32
+  location: MESH_EXTERNAL
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: NONE
+  exportTo:
+    - "."
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: linkedin-service
+spec:
+  hosts:
+    - api.linkedin.com
+  addresses:
+    - 108.174.10.22/32
+  location: MESH_EXTERNAL
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: NONE
+  exportTo:
+    - "."
+---
+apiVersion: networking.istio.io/v1beta1
+kind: ServiceEntry
+metadata:
+  name: pipedrive-service
+spec:
+  hosts:
+    - api.pipedrive.com
+  addresses:
+    - 104.18.188.228/32
+    - 104.18.189.228/32
+  location: MESH_EXTERNAL
+  ports:
+    - number: 443
+      name: https
+      protocol: TLS
+  resolution: NONE
+  exportTo:
+    - "."

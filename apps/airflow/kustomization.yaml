@@ -9,6 +9,7 @@ commonAnnotations:
 resources:
   - base/
   - netpol-egress.yaml
+  - pod-airflow-init.yaml
   - service-entries.yaml
   - sidecar.yaml
 

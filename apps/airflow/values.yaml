@@ -2,3 +2,6 @@
 createUserJob:
   labels:
     sidecar.istio.io/inject: "false"
+migrateDatabaseJob:
+  labels:
+    sidecar.istio.io/inject: "false"

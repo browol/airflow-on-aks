@@ -1,0 +1,47 @@
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: default
+  namespace: infra-istio-system
+spec:
+  profile: empty
+  components:
+    base:
+      enabled: true
+    cni:
+      enabled: false
+    pilot:
+      enabled: true
+  hub: docker.io/istio
+  meshConfig:
+    accessLogFile: /dev/stdout
+    outboundTrafficPolicy:
+      mode: ALLOW_ANY
+    defaultConfig:
+      holdApplicationUntilProxyStarts: true
+  tag: 1.20.3
+  values:
+    sidecarInjectorWebhook:
+      enableNamespacesByDefault: false
+    global:
+      configValidation: true
+      defaultPodDisruptionBudget:
+        enabled: true
+      defaultResources:
+        requests:
+          cpu: 10m
+          memory: 64Mi
+      istioNamespace: infra-istio-system
+      istiod:
+        enableAnalysis: false
+      proxy:
+        privileged: true
+        resources:
+          limits:
+            cpu: 100m
+            memory: 128Mi
+          requests:
+            cpu: 100m
+            memory: 128Mi
+    telemetry:
+      enabled: true

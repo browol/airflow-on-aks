@@ -1,0 +1,15 @@
+controller:
+  service:
+    enabled: true
+    annotations:
+      service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
+      service.beta.kubernetes.io/azure-load-balancer-internal: "false"
+    enableHttp: true
+    enableHttps: false
+    externalTrafficPolicy: Cluster
+    loadBalancerIP: {{LOAD_BALANCER_IP}}
+  admissionWebhooks:
+    patch:
+      enabled: true
+      podAnnotations:
+        sidecar.istio.io/inject: "false"

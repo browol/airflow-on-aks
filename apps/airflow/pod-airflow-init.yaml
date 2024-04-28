@@ -46,11 +46,6 @@ spec:
     image: apache/airflow:2.6.2
     imagePullPolicy: IfNotPresent
     name: airflow-init
-    command:
-    - /bin/bash
-    - -c
-    - |
-      airflow db init
     resources: {}
     securityContext:
       allowPrivilegeEscalation: false

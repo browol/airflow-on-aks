@@ -7,7 +7,7 @@ controller:
     enableHttp: true
     enableHttps: false
     externalTrafficPolicy: Cluster
-    loadBalancerIP: 192.168.5.15
+    loadBalancerIP: {{LOAD_BALANCER_IP}}
   admissionWebhooks:
     patch:
       enabled: true

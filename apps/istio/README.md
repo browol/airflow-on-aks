@@ -13,7 +13,7 @@ This command will apply necessary configurations to prepare your AKS cluster for
 To install Istio components, follow these steps:
 
 ```bash
-kubectl create namespace infra-istio
+kubectl create namespace infra-istio-system
 istioctl manifest generate -f operator/profile.yaml | kubectl apply -f -
 ```
 

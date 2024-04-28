@@ -13,6 +13,7 @@ helmCharts:
   - name: ingress-nginx
     repo: https://kubernetes.github.io/ingress-nginx
     releaseName: ingress-nginx
+    namespace: infra-ingress
     valuesFile: values.yaml
     version: 4.7.0
     includeCRDs: false

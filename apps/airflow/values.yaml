@@ -1,1 +1,7 @@
 # See https://artifacthub.io/packages/helm/apache-airflow/airflow
+createUserJob:
+  labels:
+    sidecar.istio.io/inject: "false"
+migrateDatabaseJob:
+  annotations:
+    sidecar.istio.io/inject: "false"

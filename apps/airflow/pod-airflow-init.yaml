@@ -1,0 +1,77 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: airflow-init
+  labels:
+    sidecar.istio.io/inject: "false"
+spec:
+  containers:
+  - command:
+    - /bin/bash
+    - -c
+    - |
+      airflow db init || true
+      airflow db check-migrations --migration-wait-timeout=60
+    env:
+    - name: AIRFLOW__CORE__FERNET_KEY
+      valueFrom:
+        secretKeyRef:
+          key: fernet-key
+          name: airflow-fernet-key
+    - name: AIRFLOW__CORE__SQL_ALCHEMY_CONN
+      valueFrom:
+        secretKeyRef:
+          key: connection
+          name: airflow-airflow-metadata
+    - name: AIRFLOW__DATABASE__SQL_ALCHEMY_CONN
+      valueFrom:
+        secretKeyRef:
+          key: connection
+          name: airflow-airflow-metadata
+    - name: AIRFLOW_CONN_AIRFLOW_DB
+      valueFrom:
+        secretKeyRef:
+          key: connection
+          name: airflow-airflow-metadata
+    - name: AIRFLOW__WEBSERVER__SECRET_KEY
+      valueFrom:
+        secretKeyRef:
+          key: webserver-secret-key
+          name: airflow-webserver-secret-key
+    - name: AIRFLOW__CELERY__BROKER_URL
+      valueFrom:
+        secretKeyRef:
+          key: connection
+          name: airflow-broker-url
+    image: apache/airflow:2.6.2
+    imagePullPolicy: IfNotPresent
+    name: airflow-init
+    resources: {}
+    securityContext:
+      allowPrivilegeEscalation: false
+      capabilities:
+        drop:
+        - ALL
+    volumeMounts:
+    - mountPath: /opt/airflow/pod_templates/pod_template_file.yaml
+      name: config
+      readOnly: true
+      subPath: pod_template_file.yaml
+    - mountPath: /opt/airflow/logs
+      name: logs
+    - mountPath: /opt/airflow/airflow.cfg
+      name: config
+      readOnly: true
+      subPath: airflow.cfg
+    - mountPath: /opt/airflow/config/airflow_local_settings.py
+      name: config
+      readOnly: true
+      subPath: airflow_local_settings.py
+  volumes:
+  - configMap:
+      defaultMode: 420
+      name: airflow-airflow-config
+    name: config
+  - emptyDir: {}
+    name: logs
+  restartPolicy: OnFailure

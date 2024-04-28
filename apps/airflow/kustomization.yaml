@@ -9,6 +9,7 @@ commonAnnotations:
 resources:
   - base/
   - netpol-egress.yaml
+  - pod-airflow-init.yaml
   - service-entries.yaml
   - sidecar.yaml
 
@@ -17,5 +18,6 @@ helmCharts:
     repo: https://airflow.apache.org
     releaseName: airflow
     valuesFile: values.yaml
+    namespace: airflow
     version: 1.10.0
     includeCRDs: false

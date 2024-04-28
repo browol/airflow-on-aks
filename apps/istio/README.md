@@ -4,19 +4,21 @@
 
 Before installing Istio components on your Kubernetes cluster, ensure you have the following prerequisites:
 
-1. `kubectl`, `kustomize`, and `istioctl` CLIs installed on your local machine.
+- `kubectl`, `kustomize`, and `istioctl` CLIs installed on your local machine.
 
 This command will apply necessary configurations to prepare your AKS cluster for Istio installation.
 
-## Installation
+## Generate Istio Component Manifests
 
 To install Istio components, follow these steps:
 
 ```bash
-istioctl manifest generate -f operator/profile.yaml | kubectl apply -f -
+istioctl manifest generate -f operator/profile.yaml > k8s/istioctl-generated.yaml
 ```
 
-then run below command to install istio components:
+## Installation
+
+Run below command to install istio:
 
 ```bash
 kustomize build k8s/ | kubectl apply -f -

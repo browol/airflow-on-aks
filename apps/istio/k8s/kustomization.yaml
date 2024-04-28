@@ -8,5 +8,6 @@ commonAnnotations:
 
 resources:
   - base/
+  - istioctl-generated.yaml
   - peerauthentication.yaml
   - sidecar.yaml

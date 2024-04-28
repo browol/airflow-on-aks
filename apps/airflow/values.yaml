@@ -3,5 +3,5 @@ createUserJob:
   labels:
     sidecar.istio.io/inject: "false"
 migrateDatabaseJob:
-  labels:
+  annotations:
     sidecar.istio.io/inject: "false"

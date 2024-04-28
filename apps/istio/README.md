@@ -16,7 +16,9 @@ To install Istio components, follow these steps:
 istioctl manifest generate -f operator/profile.yaml > k8s/istioctl-generated.yaml
 ```
 
-then run below command to install istio components:
+## Installation
+
+Run below command to install istio:
 
 ```bash
 kustomize build k8s/ | kubectl apply -f -

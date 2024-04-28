@@ -1,0 +1,32 @@
+# Version: 6.4.1
+# Default values for argocd can be found in https://github.com/argoproj/argo-helm/blob/argo-cd-6.4.1/charts/argo-cd/values.yaml
+
+redis-ha:
+  enabled: false
+
+controller:
+  replicas: 1
+
+server:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+
+repoServer:
+  autoscaling:
+    enabled: true
+    minReplicas: 1
+
+applicationSet:
+  replicaCount: 1
+
+## Argo Configs
+configs:
+  # General Argo CD configuration
+  ## Ref: https://github.com/argoproj/argo-cd/blob/master/docs/operator-manual/argocd-cm.yaml
+  cm:
+    # -- Create the argocd-cm configmap for [declarative setup]
+    create: true
+    # Render Helm charts with Kustomize
+    ## Ref: https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts
+    kustomize.buildOptions: --enable-helm

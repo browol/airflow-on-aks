@@ -1,0 +1,31 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: infra-ingress-nginx
+  namespace: infra-argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/browol/airflow-on-aks.git
+    path: apps/ingress-nginx
+    targetRevision: main
+    directory:
+      recurse: false
+  destination:
+    namespace: infra-ingress
+    server: https://kubernetes.default.svc
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+      allowEmpty: false
+    syncOptions:
+      - CreateNamespace=true
+      - ApplyOutOfSyncOnly=true
+      - Validate=true
+operation:
+  sync:
+    syncStrategy:
+      apply: {}

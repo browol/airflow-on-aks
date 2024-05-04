@@ -47,7 +47,7 @@ Detected Terragrunt directory at .
   ✔ Evaluating Terraform directory
   ✔ Retrieving cloud prices to calculate costs
 
-Project: .
+Project: browol/airflow-on-aks/infrastructure/terraform/terraform-azure-aks
 
  Name                                                              Monthly Qty  Unit                    Monthly Cost
 
@@ -65,7 +65,7 @@ Project: .
     └─ Data processed                                        Monthly cost depends on usage: $0.005 per GB
 
  azurerm_kubernetes_cluster_node_pool.app[0]
- ├─ Instance usage (Linux, pay as you go, Standard_D2s_v3)                 730  hours                         $91.25
+ ├─ Instance usage (Linux, pay as you go, Standard_D4s_v3)                 730  hours                        $182.50
  └─ os_disk
     └─ Storage (P10, LRS)                                                    1  months                        $19.71
 
@@ -78,20 +78,24 @@ Project: .
  ├─ Archive data restored                                    Monthly cost depends on usage: $0.13 per GB
  └─ Archive data searched                                    Monthly cost depends on usage: $0.0065 per GB
 
- azurerm_private_dns_zone.aks
- └─ Hosted zone                                                              1  months                         $0.50
-
- OVERALL TOTAL                                                                                               $213.55
+ OVERALL TOTAL                                                                                               $304.30
 ──────────────────────────────────
-17 cloud resources were detected:
-∙ 6 were estimated, 5 of which include usage-based costs, see https://infracost.io/usage-file
-∙ 11 were free, rerun with --show-skipped to see details
+14 cloud resources were detected:
+∙ 5 were estimated, all of which include usage-based costs, see https://infracost.io/usage-file
+∙ 9 were free:
+  ∙ 2 x azurerm_role_assignment
+  ∙ 2 x azurerm_user_assigned_identity
+  ∙ 1 x azurerm_network_security_group
+  ∙ 1 x azurerm_resource_group
+  ∙ 1 x azurerm_subnet
+  ∙ 1 x azurerm_subnet_network_security_group_association
+  ∙ 1 x azurerm_virtual_network
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
-┃ Project                                            ┃ Monthly cost ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
-┃ .                                                  ┃ $214         ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
+┃ Project                                                          ┃ Monthly cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
+┃ browol/airflow-on-aks/infrastru.../terraform/terraform-azure-aks ┃ $304         ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
 ```
 
 **Notes**:

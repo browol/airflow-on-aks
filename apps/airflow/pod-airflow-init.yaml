@@ -67,6 +67,13 @@ spec:
       name: config
       readOnly: true
       subPath: airflow_local_settings.py
+  nodeSelector:
+    role: worker
+  tolerations:
+  - effect: NoSchedule
+    key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: spot
   volumes:
   - configMap:
       defaultMode: 420

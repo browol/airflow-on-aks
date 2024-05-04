@@ -10612,7 +10612,9 @@ data:
         "certSigners": [],
         "configCluster": false,
         "configValidation": true,
-        "defaultNodeSelector": {},
+        "defaultNodeSelector": {
+          "role": "worker"
+        },
         "defaultPodDisruptionBudget": {
           "enabled": true
         },
@@ -10622,6 +10624,14 @@ data:
             "memory": "64Mi"
           }
         },
+        "defaultTolerations": [
+          {
+            "effect": "NoSchedule",
+            "key": "kubernetes.azure.com/scalesetpriority",
+            "operator": "Equal",
+            "value": "spot"
+          }
+        ],
         "enabled": true,
         "externalIstiod": false,
         "hub": "docker.io/istio",
@@ -10991,9 +11001,11 @@ spec:
           periodSeconds: 3
           timeoutSeconds: 5
         resources:
+          limits:
+            memory: 400Mi
           requests:
-            cpu: 500m
-            memory: 2048Mi
+            cpu: 100m
+            memory: 200Mi
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -11019,7 +11031,14 @@ spec:
         - mountPath: /var/run/secrets/istiod/ca
           name: istio-csr-ca-configmap
           readOnly: true
+      nodeSelector:
+        role: worker
       serviceAccountName: istiod
+      tolerations:
+      - effect: NoSchedule
+        key: kubernetes.azure.com/scalesetpriority
+        operator: Equal
+        value: spot
       volumes:
       - emptyDir:
           medium: Memory

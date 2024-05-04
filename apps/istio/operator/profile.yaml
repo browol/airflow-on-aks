@@ -12,6 +12,20 @@ spec:
       enabled: false
     pilot:
       enabled: true
+      k8s:
+        resources:
+          limits:
+            memory: 400Mi
+          requests:
+            cpu: 100m
+            memory: 200Mi
+        nodeSelector:
+          role: worker
+        tolerations:
+        - effect: NoSchedule
+          key: kubernetes.azure.com/scalesetpriority
+          operator: Equal
+          value: spot
   hub: docker.io/istio
   meshConfig:
     accessLogFile: /dev/stdout
@@ -43,5 +57,12 @@ spec:
           requests:
             cpu: 50m
             memory: 64Mi
+      defaultNodeSelector:
+        role: worker
+      defaultTolerations:
+      - effect: NoSchedule
+        key: kubernetes.azure.com/scalesetpriority
+        operator: Equal
+        value: spot
     telemetry:
       enabled: true

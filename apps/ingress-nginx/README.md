@@ -12,17 +12,7 @@ Make sure you have the following prerequisites before proceeding:
 
 ## Installation
 
-Update the load balancer IP address in the `values.yaml` file:
-
-```bash
-IP_ADDR=10.0.0.115
-sed -i "s/{{LOAD_BALANCER_IP}}/${IP_ADDR}/" values.yaml
-
-# If the above command doesn't work, try the following alternative:
-sed -i '' "s/{{LOAD_BALANCER_IP}}/${IP_ADDR}/" values.yaml
-```
-
-Build a test:
+Build test:
 
 ```bash
 kustomize build --enable-helm . | kubectl apply --validate='strict' --dry-run='client' -f -

@@ -8,7 +8,7 @@ spec:
     - hosts:
         - "./*"
         - "kube-system/*"
-        - "infra-ingress/*"
         - "infra-istio-system/*"
+        - "infra-ingress/*"
   outboundTrafficPolicy:
     mode: REGISTRY_ONLY

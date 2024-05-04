@@ -1,7 +1,110 @@
 # See https://artifacthub.io/packages/helm/apache-airflow/airflow
+nodeSelector:
+  role: worker
+tolerations:
+- effect: NoSchedule
+  key: kubernetes.azure.com/scalesetpriority
+  operator: Equal
+  value: spot
+ingress:
+  web:
+    enabled: true
+    annotations: {}
+    ingressClassName: nginx
+    hosts:
+    - name: browol-f7e389a4c9f3.southeastasia.cloudapp.azure.com
+    path: /
+    pathType: Prefix
 createUserJob:
   labels:
     sidecar.istio.io/inject: "false"
 migrateDatabaseJob:
   annotations:
     sidecar.istio.io/inject: "false"
+webserver:
+  waitForMigrations:
+    enabled: false
+  resources:
+    limits:
+      memory: 2000Mi
+    requests:
+      cpu: 200m
+      memory: 1000Mi
+triggerer:
+  enabled: true
+  waitForMigrations:
+    enabled: false
+  resources:
+    limits:
+      memory: 600Mi
+    requests:
+      cpu: 100m
+      memory: 300Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+workers:
+  waitForMigrations:
+    enabled: false
+  resources:
+    limits:
+      memory: 2000Mi
+    requests:
+      cpu: 100m
+      memory: 500Mi
+  persistence:
+    enabled: true
+    size: 10Gi
+scheduler:
+  waitForMigrations:
+    enabled: false
+  resources:
+    limits:
+      memory: 600Mi
+    requests:
+      cpu: 150m
+      memory: 300Mi
+dagProcessor:
+  enabled: true
+  waitForMigrations:
+    enabled: false
+  resources:
+    limits:
+      memory: 500Mi
+    requests:
+      memory: 250Mi
+      cpu: 250m
+statsd:
+  enabled: true
+  resources:
+    limits:
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+redis:
+  resources:
+    limits:
+      memory: 128Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+postgresql:
+  enabled: true
+  primary:
+    resources:
+      limits:
+        memory: 500Mi
+      requests:
+        memory: 250Mi
+        cpu: 250m
+    nodeSelector:
+      role: worker
+    tolerations:
+    - effect: NoSchedule
+      key: kubernetes.azure.com/scalesetpriority
+      operator: Equal
+      value: spot
+config:
+  core:
+    load_examples: 'True'

@@ -1,24 +1,65 @@
 # Version: 6.4.1
 # Default values for argocd can be found in https://github.com/argoproj/argo-helm/blob/argo-cd-6.4.1/charts/argo-cd/values.yaml
 
+global:
+  nodeSelector:
+    role: worker
+  tolerations:
+  - effect: NoSchedule
+    key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: spot
+
 redis-ha:
   enabled: false
 
+redis:
+  resources:
+    limits:
+      memory: 500Mi
+    requests:
+      cpu: 50m
+      memory: 250Mi
+
 controller:
   replicas: 1
+  resources:
+    limits:
+      memory: 500Mi
+    requests:
+      cpu: 100m
+      memory: 250Mi
 
 server:
   autoscaling:
     enabled: true
-    minReplicas: 1
+    maxReplicas: 1
+  resources:
+    limits:
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
 
 repoServer:
   autoscaling:
     enabled: true
-    minReplicas: 1
+    maxReplicas: 1
+  resources:
+    limits:
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
 
 applicationSet:
   replicaCount: 1
+  resources:
+    limits:
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
 
 ## Argo Configs
 configs:
@@ -30,3 +71,19 @@ configs:
     # Render Helm charts with Kustomize
     ## Ref: https://argo-cd.readthedocs.io/en/stable/user-guide/kustomize/#kustomizing-helm-charts
     kustomize.buildOptions: --enable-helm
+
+dex:
+  resources:
+    limits:
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi
+
+applicationSet:
+  resources:
+    limits:
+      memory: 200Mi
+    requests:
+      cpu: 50m
+      memory: 100Mi

@@ -24,7 +24,6 @@ kubectl create namespace infra-argocd
 Create a Kubernetes Secret YAML file named `secret.yaml` with the following content:
 
 ```bash
-# cat <<EOF > secret.yaml
 cat <<EOF | kubectl apply -f -
 apiVersion: v1
 kind: Secret
@@ -39,7 +38,7 @@ stringData:
   url: https://github.com/browol/airflow-on-aks.git
   type: git
   username: browol
-  password: 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
+  password: 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
 EOF
 ```
 

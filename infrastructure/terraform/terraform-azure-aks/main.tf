@@ -9,16 +9,17 @@ locals {
   subnet_addr_prefix        = "10.16.0.0/26"
   aad_admin_group_object_id = "96c4ca86-584a-4584-9923-ac463c8b88af"
   system_nodepool = {
-    vm_size   = "Standard_B2ms"
-    min_count = 1
-    max_count = 1
+    vm_size      = "Standard_B2ms"
+    os_disk_type = "Managed"
+    min_count    = 1
+    max_count    = 1
   }
   user_nodepool = {
-    enabled = true
-    # vm_size   = "Standard_D4s_v3"
-    vm_size   = "Standard_D2s_v3"
-    min_count = 1
-    max_count = 1
+    enabled      = true
+    vm_size      = "Standard_D4s_v3"
+    os_disk_type = "Managed"
+    min_count    = 1
+    max_count    = 1
   }
   tags = {
     client      = local.client
@@ -114,20 +115,19 @@ resource "azurerm_kubernetes_cluster" "aks" {
   tags                = local.tags
   node_resource_group = format("%s-%s", module.naming.resource_group.name, "nodepool")
   sku_tier            = "Free"
-  kubernetes_version  = "1.28.3"
+  kubernetes_version  = "1.29"
 
   # Advanced Settings
   azure_policy_enabled   = true
   local_account_disabled = true
-  private_dns_zone_id    = azurerm_private_dns_zone.aks.id
 
   # ERROR: Preview feature Microsoft.ContainerService/NodeOSUpgradeChannelPreview not registered.
   # node_os_channel_upgrade = "SecurityPatch"
 
-  # Private Cluster Settings
-  private_cluster_enabled             = true
-  private_cluster_public_fqdn_enabled = true
-  dns_prefix_private_cluster          = module.naming.kubernetes_cluster.name_unique
+  # Accessibility Cluster Settings
+  private_cluster_enabled             = false
+  private_cluster_public_fqdn_enabled = false
+  dns_prefix                          = module.naming.kubernetes_cluster.name_unique
 
   # System Node Pool
   default_node_pool {
@@ -135,7 +135,7 @@ resource "azurerm_kubernetes_cluster" "aks" {
     temporary_name_for_rotation = "tempsys"
     vm_size                     = local.system_nodepool.vm_size
     os_sku                      = "Ubuntu"
-    os_disk_type                = "Managed"
+    os_disk_type                = local.system_nodepool.os_disk_type
     zones                       = ["1", "2", "3"]
     enable_auto_scaling         = true
     min_count                   = local.system_nodepool.min_count
@@ -217,8 +217,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
   }
 
   depends_on = [
-    azurerm_private_dns_zone_virtual_network_link.link,
-    azurerm_role_assignment.aks_private_dns,
     azurerm_role_assignment.aks_managed_kubelet,
     azurerm_log_analytics_workspace.law,
     azurerm_subnet.nodepool,
@@ -226,17 +224,12 @@ resource "azurerm_kubernetes_cluster" "aks" {
 }
 
 resource "azurerm_kubernetes_cluster_node_pool" "app" {
-  count   = local.user_nodepool.enabled ? 1 : 0
-  name    = "app"
-  vm_size = local.user_nodepool.vm_size
-  os_type = "Linux"
-  os_sku  = "Ubuntu"
-
-  // Error: The virtual machine size Standard_D4s_v3 has a cache size of 107374182400 bytes and temporary disk size of 34359738368 bytes, but the OS disk requires 137438953472 bytes. Use a VM size with larger cache, larger temp disk, or disable ephemeral OS.
-  # os_disk_type = "Ephemeral"
-
-  // Fixed
-  os_disk_type = "Managed"
+  count        = local.user_nodepool.enabled ? 1 : 0
+  name         = "app"
+  vm_size      = local.user_nodepool.vm_size
+  os_type      = "Linux"
+  os_sku       = "Ubuntu"
+  os_disk_type = local.user_nodepool.os_disk_type
 
   zones                 = ["1", "2", "3"]
   kubernetes_cluster_id = azurerm_kubernetes_cluster.aks.id
@@ -244,8 +237,12 @@ resource "azurerm_kubernetes_cluster_node_pool" "app" {
   tags                  = local.tags
 
   node_taints = [
-    "role=worker:NoSchedule"
+    "kubernetes.azure.com/scalesetpriority=spot:NoSchedule"
   ]
+
+  node_labels = {
+    role = "worker"
+  }
 
   # Auto Scaling
   enable_auto_scaling = true
@@ -317,28 +314,6 @@ resource "azurerm_monitor_diagnostic_setting" "aks" {
   ]
 }
 
-resource "azurerm_private_dns_zone" "aks" {
-  name                = "privatelink.${local.location}.azmk8s.io"
-  resource_group_name = azurerm_resource_group.rg.name
-  tags                = local.tags
-
-  depends_on = [
-    azurerm_resource_group.rg,
-  ]
-}
-
-resource "azurerm_private_dns_zone_virtual_network_link" "link" {
-  name                  = format("link-%s", azurerm_private_dns_zone.aks.name)
-  resource_group_name   = azurerm_resource_group.rg.name
-  private_dns_zone_name = azurerm_private_dns_zone.aks.name
-  virtual_network_id    = azurerm_virtual_network.vnet.id
-
-  depends_on = [
-    azurerm_private_dns_zone.aks,
-    azurerm_virtual_network.vnet,
-  ]
-}
-
 resource "azurerm_user_assigned_identity" "aks" {
   name                = format("%s-%s", module.naming.user_assigned_identity.name, "aks")
   resource_group_name = azurerm_resource_group.rg.name
@@ -361,12 +336,6 @@ resource "azurerm_user_assigned_identity" "kubelet" {
   ]
 }
 
-resource "azurerm_role_assignment" "aks_private_dns" {
-  scope                = azurerm_private_dns_zone.aks.id
-  role_definition_name = "Private DNS Zone Contributor"
-  principal_id         = azurerm_user_assigned_identity.aks.principal_id
-}
-
 resource "azurerm_role_assignment" "aks_managed_kubelet" {
   scope                = azurerm_user_assigned_identity.kubelet.id
   role_definition_name = "Managed Identity Operator"
@@ -387,5 +356,5 @@ resource "azurerm_role_assignment" "kubelet_acr" {
 
 output "command" {
   value       = "az aks command invoke --resource-group ${azurerm_kubernetes_cluster.aks.resource_group_name} --name ${azurerm_kubernetes_cluster.aks.name} --command ..."
-  description = "placeholder command to remotely execute a Kubernetes command"
+  description = "Example command for remote execution in private Kubernetes cluster"
 }

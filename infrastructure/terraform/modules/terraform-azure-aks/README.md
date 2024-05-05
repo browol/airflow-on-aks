@@ -1,7 +1,6 @@
 <!-- BEGIN_TF_DOCS -->
-# Terraform Private Azure Kubernetes Service (AKS) cluster
+# Terraform Public Azure Kubernetes Service (AKS) cluster
 
-[![Terraform tests](https://github.com/browol/terraform-azure-aks-example/actions/workflows/terraform-tests.yml/badge.svg)](https://github.com/browol/terraform-azure-aks-example/actions/workflows/terraform-tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository provides a simple example of how to use Terragrunt to provision an Azure Kubernetes Service in the private network.
@@ -34,46 +33,11 @@ terragrunt run-all destroy
 Example:
 
 ```bash
-az aks command invoke --resource-group rg-d-ea1-browol-infra --name aks-d-ea1-browol-infra-jm5t --command "kubectl get nodes"
+az aks get-credentials --resource-group <aks-resource-group-name> --name <aks-cluster-name> --overwrite-existing
+kubelogin convert-kubeconfig -l azurecli
 ```
 
 See <https://learn.microsoft.com/en-us/azure/aks/access-private-cluster?tabs=azure-cli>
-
-## Troubleshooting
-
-### KubernetesPerformanceError: Failed to run command due to cluster perf issue
-
-An error occurred while attempting to run the `az aks command invoke` command.
-
-```bash
-az aks command invoke --resource-group rg-d-ea1-browol-infra --name aks-d-ea1-browol-infra-jm5t --command "kubectl get nodes"
-(KubernetesPerformanceError) Failed to run the command due to cluster performance issues. The container command-9f71543a9f184b568827005379d4b513 in the aks-command namespace did not start within 30 seconds on your cluster. Retrying may help. If the issue persists, you may need to optimize your cluster for better performance (larger node/paid tier).
-Code: KubernetesPerformanceError
-Message: Failed to run the command due to cluster performance issues. The container command-9f71543a9f184b568827005379d4b513 in the aks-command namespace did not start within 30 seconds on your cluster. Retrying may help. If the issue persists, you may need to optimize your cluster for better performance (larger node/paid tier).
-```
-
-This issue is caused by the pod that was used to execute the invoke command for you being unable to provision successfully, leading to the above error message.
-
-Here's what the pods look like:
-
-```bash
-NAME                                       READY   STATUS            RESTARTS   AGE
-command-9f71543a9f184b568827005379d4b513   0/1     Pending           0          8m5s
-command-b3660a6f94b74677b3bf55315a6b929c   0/1     Pending           0          8m46s
-```
-
-To resolve the issue, you need to remove the node taint as per your declaration in Terraform:
-
-```hcl
-resource "azurerm_kubernetes_cluster" "aks" {
-  default_node_pool {
-    # comment out below line
-    # only_critical_addons_enabled = true
-  }
-}
-```
-
-After updates were applied, you will be able to run the `az aks command invoke` properly.
 
 ## Providers
 
@@ -98,27 +62,40 @@ After updates were applied, you will be able to run the `az aks command invoke` 
 | [azurerm_log_analytics_workspace.law](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/log_analytics_workspace) | resource |
 | [azurerm_monitor_diagnostic_setting.aks](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/monitor_diagnostic_setting) | resource |
 | [azurerm_network_security_group.default](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/network_security_group) | resource |
-| [azurerm_private_dns_zone.aks](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/private_dns_zone) | resource |
-| [azurerm_private_dns_zone_virtual_network_link.link](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/private_dns_zone_virtual_network_link) | resource |
+| [azurerm_network_security_rule.allow_http_load_balancer](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/network_security_rule) | resource |
+| [azurerm_network_security_rule.allow_https_load_balancer](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/network_security_rule) | resource |
 | [azurerm_resource_group.rg](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/resource_group) | resource |
 | [azurerm_role_assignment.aks_managed_kubelet](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/role_assignment) | resource |
-| [azurerm_role_assignment.aks_private_dns](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/role_assignment) | resource |
 | [azurerm_role_assignment.kubelet_acr](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/role_assignment) | resource |
 | [azurerm_subnet.nodepool](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/subnet) | resource |
 | [azurerm_subnet_network_security_group_association.nodepool_default](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/subnet_network_security_group_association) | resource |
 | [azurerm_user_assigned_identity.aks](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/user_assigned_identity) | resource |
 | [azurerm_user_assigned_identity.kubelet](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/user_assigned_identity) | resource |
 | [azurerm_virtual_network.vnet](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/resources/virtual_network) | resource |
+| [azurerm_lb.aks_lb](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/data-sources/lb) | data source |
+| [azurerm_public_ip.aks_lb_pip](https://registry.terraform.io/providers/hashicorp/azurerm/3.92.0/docs/data-sources/public_ip) | data source |
 
 ## Inputs
 
-No inputs.
+| Name | Description | Type | Default | Required |
+|------|-------------|------|---------|:--------:|
+| <a name="input_aad_admin_group_object_id"></a> [aad\_admin\_group\_object\_id](#input\_aad\_admin\_group\_object\_id) | n/a | `string` | n/a | yes |
+| <a name="input_client"></a> [client](#input\_client) | n/a | `string` | n/a | yes |
+| <a name="input_environment"></a> [environment](#input\_environment) | n/a | `string` | n/a | yes |
+| <a name="input_environment_short"></a> [environment\_short](#input\_environment\_short) | n/a | `string` | n/a | yes |
+| <a name="input_location"></a> [location](#input\_location) | n/a | `string` | n/a | yes |
+| <a name="input_location_short"></a> [location\_short](#input\_location\_short) | n/a | `string` | n/a | yes |
+| <a name="input_stack"></a> [stack](#input\_stack) | n/a | `string` | n/a | yes |
+| <a name="input_subnet_addr_prefix"></a> [subnet\_addr\_prefix](#input\_subnet\_addr\_prefix) | n/a | `string` | n/a | yes |
+| <a name="input_vnet_addr_prefix"></a> [vnet\_addr\_prefix](#input\_vnet\_addr\_prefix) | n/a | `string` | n/a | yes |
+| <a name="input_system_nodepool"></a> [system\_nodepool](#input\_system\_nodepool) | n/a | `map(string)` | <pre>{<br>  "max_count": 1,<br>  "min_count": 1,<br>  "os_disk_type": "Managed",<br>  "vm_size": "Standard_B2ms"<br>}</pre> | no |
+| <a name="input_user_nodepool"></a> [user\_nodepool](#input\_user\_nodepool) | n/a | `map(string)` | <pre>{<br>  "enabled": true,<br>  "max_count": 1,<br>  "min_count": 1,<br>  "os_disk_type": "Managed",<br>  "vm_size": "Standard_D4s_v3"<br>}</pre> | no |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| <a name="output_command"></a> [command](#output\_command) | placeholder command to remotely execute a Kubernetes command |
+| <a name="output_command"></a> [command](#output\_command) | Example command for remote execution in the Azure Kubernetes cluster |
 
 ## Contributing
 

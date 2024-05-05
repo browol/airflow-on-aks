@@ -19,20 +19,6 @@ locals {
   }
 }
 
-# Generate an AWS provider block
-# generate "provider" {
-#   path      = "provider.tf"
-#   if_exists = "overwrite_terragrunt"
-#   contents  = <<EOF
-# provider "aws" {
-#   region = "${local.location}"
-
-#   # Only these AWS Account IDs may be operated on by this template
-#   allowed_account_ids = ["${local.account_id}"]
-# }
-# EOF
-# }
-
 # Configure Terragrunt to automatically store tfstate files
 remote_state {
   backend = "local"

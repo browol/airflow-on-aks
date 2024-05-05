@@ -1,2 +1,9 @@
 charts/
 build.yml
+.terragrunt-cache/
+.DS_Store
+.infracost/
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+.terraform.tfstate.lock.info

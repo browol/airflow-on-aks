@@ -1,34 +1,23 @@
 locals {
-  client                    = "browol"
-  stack                     = "infra"
-  environment               = "dev"
-  environment_short         = "d"
-  location                  = "southeastasia"
-  location_short            = "sa1"
-  vnet_addr_prefix          = "10.16.0.0/24"
-  subnet_addr_prefix        = "10.16.0.0/26"
-  aad_admin_group_object_id = "96c4ca86-584a-4584-9923-ac463c8b88af"
-  system_nodepool = {
-    vm_size      = "Standard_B2ms"
-    os_disk_type = "Managed"
-    min_count    = 1
-    max_count    = 1
-  }
-  user_nodepool = {
-    enabled      = true
-    vm_size      = "Standard_D4s_v3"
-    os_disk_type = "Managed"
-    min_count    = 1
-    max_count    = 1
-  }
+  client                    = var.client
+  stack                     = var.stack
+  environment               = var.environment
+  environment_short         = var.environment_short
+  location                  = var.location
+  location_short            = var.location_short
+  vnet_addr_prefix          = var.vnet_addr_prefix
+  subnet_addr_prefix        = var.subnet_addr_prefix
+  aad_admin_group_object_id = var.aad_admin_group_object_id
+  system_nodepool           = var.system_nodepool
+  user_nodepool             = var.user_nodepool
   tags = {
-    client      = local.client
-    environment = local.environment
-    stack       = local.stack
+    client      = var.client
+    environment = var.environment
+    stack       = var.stack
   }
   naming_suffix = split(
     "-",
-    format("%s-%s-%s-%s", local.environment_short, local.location_short, local.client, local.stack)
+    format("%s-%s-%s-%s", var.environment_short, var.location_short, var.client, var.stack)
   )
 }
 
@@ -89,6 +78,69 @@ resource "azurerm_network_security_group" "default" {
   name                = module.naming.network_security_group.name
   location            = azurerm_resource_group.rg.location
   resource_group_name = azurerm_resource_group.rg.name
+}
+
+# load balancer
+data "azurerm_lb" "aks_lb" {
+  name                = "kubernetes"
+  resource_group_name = azurerm_kubernetes_cluster.aks.node_resource_group
+
+  depends_on = [
+    azurerm_kubernetes_cluster.aks,
+  ]
+}
+
+locals {
+  aks_lb_pip_id       = element(data.azurerm_lb.aks_lb.frontend_ip_configuration, 0).public_ip_address_id
+  aks_lb_pip_id_split = split("/", local.aks_lb_pip_id)
+}
+
+# load balancer public ip
+data "azurerm_public_ip" "aks_lb_pip" {
+  name                = element(local.aks_lb_pip_id_split, length(local.aks_lb_pip_id_split) - 1)
+  resource_group_name = element(local.aks_lb_pip_id_split, 4)
+
+  depends_on = [
+    data.azurerm_lb.aks_lb,
+  ]
+}
+
+# load balancer nsg rule
+resource "azurerm_network_security_rule" "allow_http_load_balancer" {
+  name                        = "AllowHttpLoadBalancer"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_range      = "80"
+  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip.ip_address
+  resource_group_name         = azurerm_network_security_group.default.resource_group_name
+  network_security_group_name = azurerm_network_security_group.default.name
+
+  depends_on = [
+    data.azurerm_lb.aks_lb,
+  ]
+}
+
+# load balancer nsg rule
+resource "azurerm_network_security_rule" "allow_https_load_balancer" {
+  name                        = "AllowHttpsLoadBalancer"
+  priority                    = 110
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_range      = "443"
+  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip.ip_address
+  resource_group_name         = azurerm_network_security_group.default.resource_group_name
+  network_security_group_name = azurerm_network_security_group.default.name
+
+  depends_on = [
+    data.azurerm_lb.aks_lb,
+  ]
 }
 
 # subnet
@@ -355,6 +407,10 @@ resource "azurerm_role_assignment" "kubelet_acr" {
 }
 
 output "command" {
-  value       = "az aks command invoke --resource-group ${azurerm_kubernetes_cluster.aks.resource_group_name} --name ${azurerm_kubernetes_cluster.aks.name} --command ..."
-  description = "Example command for remote execution in private Kubernetes cluster"
+  description = "Example command for remote execution in the Azure Kubernetes cluster"
+  value       = <<EOF
+az aks get-credentials --resource-group ${azurerm_kubernetes_cluster.aks.resource_group_name} --name ${azurerm_kubernetes_cluster.aks.name} --overwrite-existing
+kubelogin convert-kubeconfig -l azurecli
+kubectl get nodes
+EOF
 }

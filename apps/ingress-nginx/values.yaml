@@ -6,7 +6,7 @@ controller:
       service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
       service.beta.kubernetes.io/azure-load-balancer-internal: "false"
       service.beta.kubernetes.io/azure-dns-label-name: "browol-f7e389a4c9f3"
-    enableHttp: true
+    enableHttp: false
     enableHttps: true
     externalTrafficPolicy: Cluster
   admissionWebhooks:
@@ -21,3 +21,6 @@ controller:
     key: kubernetes.azure.com/scalesetpriority
     operator: Equal
     value: spot
+  configAnnotations:
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"

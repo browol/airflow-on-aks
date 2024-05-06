@@ -1,0 +1,32 @@
+---
+# Please be aware that the production ACME environment has strict rate limits.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-production
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: 15768970+browol@users.noreply.github.com  # Replace with your valid email address for registration
+    privateKeySecretRef:
+      name: letsencrypt-production
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx
+---
+# Please note that certificates from ACME staging aren't trusted, similar to self-signed ones, as they're only for testing.
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+spec:
+  acme:
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: 15768970+browol@users.noreply.github.com  # Replace with your valid email address for registration
+    privateKeySecretRef:
+      name: letsencrypt-staging
+    solvers:
+      - http01:
+          ingress:
+            ingressClassName: nginx

@@ -9,10 +9,15 @@ tolerations:
 ingress:
   web:
     enabled: true
-    annotations: {}
+    annotations:
+      cert-manager.io/cluster-issuer: "letsencrypt-staging"  # for production environment replace staging with production
+      cert-manager.io/issue-temporary-certificate: "true"
     ingressClassName: nginx
     hosts:
-    - name: browol-f7e389a4c9f3.southeastasia.cloudapp.azure.com
+    - name: browol-f7e389a4c9f3.southeastasia.cloudapp.azure.com  # replace with your hostname
+      tls:
+        enabled: true
+        secretName: "airflow-tls"
     path: /
     pathType: Prefix
 createUserJob:

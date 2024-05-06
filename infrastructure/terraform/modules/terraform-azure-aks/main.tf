@@ -91,7 +91,8 @@ data "azurerm_lb" "aks_lb" {
 }
 
 locals {
-  aks_lb_pip_id       = element(data.azurerm_lb.aks_lb.frontend_ip_configuration, 0).public_ip_address_id
+  # Get the public IP where its name does not contains hyphen characters, which is often used for load balancer IP
+  aks_lb_pip_id       = [for k,v in data.azurerm_lb.aks_lb.frontend_ip_configuration : v.public_ip_address_id if !strcontains(v.name, "-")][0]
   aks_lb_pip_id_split = split("/", local.aks_lb_pip_id)
 }
 
@@ -99,25 +100,6 @@ locals {
 data "azurerm_public_ip" "aks_lb_pip" {
   name                = element(local.aks_lb_pip_id_split, length(local.aks_lb_pip_id_split) - 1)
   resource_group_name = element(local.aks_lb_pip_id_split, 4)
-
-  depends_on = [
-    data.azurerm_lb.aks_lb,
-  ]
-}
-
-# load balancer nsg rule
-resource "azurerm_network_security_rule" "allow_http_load_balancer" {
-  name                        = "AllowHttpLoadBalancer"
-  priority                    = 100
-  direction                   = "Inbound"
-  access                      = "Allow"
-  protocol                    = "Tcp"
-  source_port_range           = "*"
-  source_address_prefix       = "*"
-  destination_port_range      = "80"
-  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip.ip_address
-  resource_group_name         = azurerm_network_security_group.default.resource_group_name
-  network_security_group_name = azurerm_network_security_group.default.name
 
   depends_on = [
     data.azurerm_lb.aks_lb,

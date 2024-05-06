@@ -107,6 +107,25 @@ data "azurerm_public_ip" "aks_lb_pip" {
 }
 
 # load balancer nsg rule
+resource "azurerm_network_security_rule" "allow_http_load_balancer" {
+  name                        = "AllowHttpLoadBalancer"
+  priority                    = 100
+  direction                   = "Inbound"
+  access                      = "Allow"
+  protocol                    = "Tcp"
+  source_port_range           = "*"
+  source_address_prefix       = "*"
+  destination_port_range      = "80"
+  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip.ip_address
+  resource_group_name         = azurerm_network_security_group.default.resource_group_name
+  network_security_group_name = azurerm_network_security_group.default.name
+
+  depends_on = [
+    data.azurerm_lb.aks_lb,
+  ]
+}
+
+# load balancer nsg rule
 resource "azurerm_network_security_rule" "allow_https_load_balancer" {
   name                        = "AllowHttpsLoadBalancer"
   priority                    = 110

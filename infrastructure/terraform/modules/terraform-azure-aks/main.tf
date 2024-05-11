@@ -61,7 +61,7 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled       = false
 }
 
-# vnet
+# VNet
 resource "azurerm_virtual_network" "vnet" {
   name                = module.naming.virtual_network.name
   resource_group_name = azurerm_resource_group.rg.name
@@ -80,24 +80,23 @@ resource "azurerm_network_security_group" "default" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-# load balancer
+# AKS Load balancer
 data "azurerm_lb" "aks_lb" {
   name                = "kubernetes"
   resource_group_name = azurerm_kubernetes_cluster.aks.node_resource_group
-
-  depends_on = [
-    azurerm_kubernetes_cluster.aks,
-  ]
 }
 
 locals {
-  # Get the public IP where its name does not contains hyphen characters, which is often used for load balancer IP
-  aks_lb_pip_id       = [for k,v in data.azurerm_lb.aks_lb.frontend_ip_configuration : v.public_ip_address_id if !strcontains(v.name, "-")][0]
-  aks_lb_pip_id_split = split("/", local.aks_lb_pip_id)
+  # Get the public IP where its name does not contains hyphen characters, which is often used for Load balancer IP
+  aks_lb_pip_ids      = [for k, v in data.azurerm_lb.aks_lb.frontend_ip_configuration : v.public_ip_address_id if !strcontains(v.name, "-")]
+  aks_lb_pip_id_split = can(local.aks_lb_pip_ids[0]) ? split("/", local.aks_lb_pip_ids[0]) : []
+  has_inbound_ip      = length(local.aks_lb_pip_id_split) > 0 ? true : false
 }
 
-# load balancer public ip
+# Load balancer public IP
 data "azurerm_public_ip" "aks_lb_pip" {
+  count = local.has_inbound_ip ? 1 : 0
+
   name                = element(local.aks_lb_pip_id_split, length(local.aks_lb_pip_id_split) - 1)
   resource_group_name = element(local.aks_lb_pip_id_split, 4)
 
@@ -106,8 +105,10 @@ data "azurerm_public_ip" "aks_lb_pip" {
   ]
 }
 
-# load balancer nsg rule
+# Load balancer NSG rule
 resource "azurerm_network_security_rule" "allow_http_load_balancer" {
+  count = local.has_inbound_ip ? 1 : 0
+
   name                        = "AllowHttpLoadBalancer"
   priority                    = 100
   direction                   = "Inbound"
@@ -116,17 +117,15 @@ resource "azurerm_network_security_rule" "allow_http_load_balancer" {
   source_port_range           = "*"
   source_address_prefix       = "*"
   destination_port_range      = "80"
-  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip.ip_address
+  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip[0].ip_address
   resource_group_name         = azurerm_network_security_group.default.resource_group_name
   network_security_group_name = azurerm_network_security_group.default.name
-
-  depends_on = [
-    data.azurerm_lb.aks_lb,
-  ]
 }
 
-# load balancer nsg rule
+# Load balancer NSG rule
 resource "azurerm_network_security_rule" "allow_https_load_balancer" {
+  count = local.has_inbound_ip ? 1 : 0
+
   name                        = "AllowHttpsLoadBalancer"
   priority                    = 110
   direction                   = "Inbound"
@@ -135,16 +134,16 @@ resource "azurerm_network_security_rule" "allow_https_load_balancer" {
   source_port_range           = "*"
   source_address_prefix       = "*"
   destination_port_range      = "443"
-  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip.ip_address
+  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip[0].ip_address
   resource_group_name         = azurerm_network_security_group.default.resource_group_name
   network_security_group_name = azurerm_network_security_group.default.name
 
   depends_on = [
-    data.azurerm_lb.aks_lb,
+    data.azurerm_public_ip.aks_lb_pip[0],
   ]
 }
 
-# subnet
+# Subnet
 resource "azurerm_subnet" "nodepool" {
   name                 = format("%s-%s-%s", "privint", "0", "nodepool")
   resource_group_name  = azurerm_resource_group.rg.name
@@ -294,7 +293,8 @@ resource "azurerm_kubernetes_cluster_node_pool" "app" {
   ]
 
   node_labels = {
-    role = "worker"
+    role                                    = "worker"
+    "kubernetes.azure.com/scalesetpriority" = "spot"
   }
 
   # Auto Scaling

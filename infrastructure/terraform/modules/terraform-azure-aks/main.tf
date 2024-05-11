@@ -61,6 +61,15 @@ resource "azurerm_container_registry" "acr" {
   admin_enabled       = false
 }
 
+resource "azurerm_public_ip" "aks_pip" {
+  name                = module.naming.public_ip.name
+  resource_group_name = azurerm_resource_group.rg.name
+  location            = azurerm_resource_group.rg.location
+  allocation_method   = "Static"
+  sku                 = "Standard"
+  tags                = local.tags
+}
+
 # VNet
 resource "azurerm_virtual_network" "vnet" {
   name                = module.naming.virtual_network.name
@@ -80,72 +89,39 @@ resource "azurerm_network_security_group" "default" {
   resource_group_name = azurerm_resource_group.rg.name
 }
 
-# AKS Load balancer
-data "azurerm_lb" "aks_lb" {
-  name                = "kubernetes"
-  resource_group_name = azurerm_kubernetes_cluster.aks.node_resource_group
-}
-
-locals {
-  # Get the public IP where its name does not contains hyphen characters, which is often used for Load balancer IP
-  aks_lb_pip_ids      = [for k, v in data.azurerm_lb.aks_lb.frontend_ip_configuration : v.public_ip_address_id if !strcontains(v.name, "-")]
-  aks_lb_pip_id_split = can(local.aks_lb_pip_ids[0]) ? split("/", local.aks_lb_pip_ids[0]) : []
-  has_inbound_ip      = length(local.aks_lb_pip_id_split) > 0 ? true : false
-}
-
-# Load balancer public IP
-data "azurerm_public_ip" "aks_lb_pip" {
-  count = local.has_inbound_ip ? 1 : 0
-
-  name                = element(local.aks_lb_pip_id_split, length(local.aks_lb_pip_id_split) - 1)
-  resource_group_name = element(local.aks_lb_pip_id_split, 4)
-
-  depends_on = [
-    data.azurerm_lb.aks_lb,
-  ]
-}
-
 # Load balancer NSG rule
 resource "azurerm_network_security_rule" "allow_http_load_balancer" {
-  count = local.has_inbound_ip ? 1 : 0
-
   name                        = "AllowHttpLoadBalancer"
   priority                    = 100
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
   source_port_range           = "*"
-  source_address_prefix       = "*"
+  source_address_prefix       = "Internet"
   destination_port_range      = "80"
-  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip[0].ip_address
+  destination_address_prefix  = azurerm_public_ip.aks_pip.ip_address
   resource_group_name         = azurerm_network_security_group.default.resource_group_name
   network_security_group_name = azurerm_network_security_group.default.name
 }
 
 # Load balancer NSG rule
 resource "azurerm_network_security_rule" "allow_https_load_balancer" {
-  count = local.has_inbound_ip ? 1 : 0
-
   name                        = "AllowHttpsLoadBalancer"
   priority                    = 110
   direction                   = "Inbound"
   access                      = "Allow"
   protocol                    = "Tcp"
   source_port_range           = "*"
-  source_address_prefix       = "*"
+  source_address_prefix       = "Internet"
   destination_port_range      = "443"
-  destination_address_prefix  = data.azurerm_public_ip.aks_lb_pip[0].ip_address
+  destination_address_prefix  = azurerm_public_ip.aks_pip.ip_address
   resource_group_name         = azurerm_network_security_group.default.resource_group_name
   network_security_group_name = azurerm_network_security_group.default.name
-
-  depends_on = [
-    data.azurerm_public_ip.aks_lb_pip[0],
-  ]
 }
 
 # Subnet
 resource "azurerm_subnet" "nodepool" {
-  name                 = format("%s-%s-%s", "privint", "0", "nodepool")
+  name                 = format("sub-%s-%s-%s-%s", var.environment_short, var.location_short, "privint", "0")
   resource_group_name  = azurerm_resource_group.rg.name
   virtual_network_name = azurerm_virtual_network.vnet.name
   address_prefixes     = [local.subnet_addr_prefix]
@@ -193,7 +169,6 @@ resource "azurerm_kubernetes_cluster" "aks" {
     min_count                   = local.system_nodepool.min_count
     max_count                   = local.system_nodepool.max_count
     vnet_subnet_id              = azurerm_subnet.nodepool.id
-
 
     // Make sure you've enabled the EncryptionAtHost feature
     // Otherwise, run `az feature register --name EncryptionAtHost --namespace Microsoft.Compute`
@@ -376,6 +351,12 @@ resource "azurerm_user_assigned_identity" "aks" {
   depends_on = [
     azurerm_resource_group.rg,
   ]
+}
+
+resource "azurerm_role_assignment" "aks_pip" {
+  scope                = azurerm_resource_group.rg.id
+  role_definition_name = "Network Contributor"
+  principal_id         = azurerm_user_assigned_identity.aks.principal_id
 }
 
 resource "azurerm_user_assigned_identity" "kubelet" {

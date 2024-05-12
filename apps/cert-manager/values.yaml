@@ -1,0 +1,43 @@
+installCRDs: true
+cert-manager:
+  namespace: infra-cert-manager
+prometheus:
+  enabled: false
+nodeSelector:
+  role: worker
+tolerations:
+- effect: NoSchedule
+  key: kubernetes.azure.com/scalesetpriority
+  operator: Equal
+  value: spot
+webhook:
+  networkPolicy:
+    enabled: true
+  podLabels:
+    sidecar.istio.io/inject: "false"
+  nodeSelector:
+    role: worker
+  tolerations:
+  - effect: NoSchedule
+    key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: spot
+cainjector:
+  podLabels: {}
+  nodeSelector:
+    role: worker
+  tolerations:
+  - effect: NoSchedule
+    key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: spot
+startupapicheck:
+  podLabels:
+    sidecar.istio.io/inject: "false"
+  nodeSelector:
+    role: worker
+  tolerations:
+  - effect: NoSchedule
+    key: kubernetes.azure.com/scalesetpriority
+    operator: Equal
+    value: spot

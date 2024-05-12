@@ -1,10 +1,9 @@
 # Airflow on AKS
 
-This repository contains configurations and infrastructure templates for deploying Apache Airflow on Azure Kubernetes Service (AKS).
+A sample repository features Apache Airflow deployed on an Azure Kubernetes Service (AKS) cluster
 
 ## Directory Structure
 
-- **README.md**: You're reading it!
 - **apps/**: Contains application-specific configurations.
   - **k8s/**: Kubernetes manifests for deploying applications.
     - **airflow/**: Configuration files for deploying Apache Airflow.
@@ -14,36 +13,26 @@ This repository contains configurations and infrastructure templates for deployi
 
 ## Usage
 
-### Apache Airflow Deployment
-
-- Navigate to the `apps/k8s/airflow/` directory for Apache Airflow deployment configurations.
-- Customize the deployment according to your requirements.
-
 ### Infrastructure
 
-- **Kubernetes (k8s):**
-  - Contains Kubernetes manifests for deploying infrastructure components such as ingress controllers.
-- **Terraform:**
-  - Infrastructure provisioning templates for setting up Azure Kubernetes Service and related resources.
+See [README.md](infrastructure/terraform/README.md)
 
-## Infrastructure Costs
+#### Cost Estimation
 
 The estimated monthly infrastructure costs for this project are as follows:
 
 ```bash
-Detected Terragrunt directory at .
-  ✔ Downloading Terraform modules
-  ✔ Evaluating Terraform directory
-  ✔ Retrieving cloud prices to calculate costs
+INFO Autodetected 1 Terragrunt project across 1 root module
+INFO Found Terragrunt project main at directory .
 
-Project: browol/airflow-on-aks/infrastructure/terraform/environments/dev/aks
+Project: main
 
  Name                                                              Monthly Qty  Unit                    Monthly Cost
 
- azurerm_container_registry.acr
- ├─ Registry usage (Basic)                                                  30  days                           $5.00
- ├─ Storage (over 10GB)                                      Monthly cost depends on usage: $0.10 per GB
- └─ Build vCPU                                               Monthly cost depends on usage: $0.0001 per seconds
+ azurerm_kubernetes_cluster_node_pool.app[0]
+ ├─ Instance usage (Linux, pay as you go, Standard_D4s_v3)                 730  hours                        $182.50
+ └─ os_disk
+    └─ Storage (P10, LRS)                                                    1  months                        $19.71
 
  azurerm_kubernetes_cluster.aks
  ├─ default_node_pool
@@ -53,10 +42,13 @@ Project: browol/airflow-on-aks/infrastructure/terraform/environments/dev/aks
  └─ Load Balancer
     └─ Data processed                                        Monthly cost depends on usage: $0.005 per GB
 
- azurerm_kubernetes_cluster_node_pool.app[0]
- ├─ Instance usage (Linux, pay as you go, Standard_D4s_v3)                 730  hours                        $182.50
- └─ os_disk
-    └─ Storage (P10, LRS)                                                    1  months                        $19.71
+ azurerm_container_registry.acr
+ ├─ Registry usage (Basic)                                                  30  days                           $5.00
+ ├─ Storage (over 10GB)                                      Monthly cost depends on usage: $0.10 per GB
+ └─ Build vCPU                                               Monthly cost depends on usage: $0.0001 per seconds
+
+ azurerm_public_ip.aks_pip
+ └─ IP address (static, regional)                                          730  hours                          $3.65
 
  azurerm_log_analytics_workspace.law
  ├─ Log data ingestion                                       Monthly cost depends on usage: $2.99 per GB
@@ -67,24 +59,20 @@ Project: browol/airflow-on-aks/infrastructure/terraform/environments/dev/aks
  ├─ Archive data restored                                    Monthly cost depends on usage: $0.13 per GB
  └─ Archive data searched                                    Monthly cost depends on usage: $0.0065 per GB
 
- OVERALL TOTAL                                                                                               $304.30
-──────────────────────────────────
-14 cloud resources were detected:
-∙ 5 were estimated, all of which include usage-based costs, see https://infracost.io/usage-file
-∙ 9 were free:
-  ∙ 2 x azurerm_role_assignment
-  ∙ 2 x azurerm_user_assigned_identity
-  ∙ 1 x azurerm_network_security_group
-  ∙ 1 x azurerm_resource_group
-  ∙ 1 x azurerm_subnet
-  ∙ 1 x azurerm_subnet_network_security_group_association
-  ∙ 1 x azurerm_virtual_network
+ OVERALL TOTAL                                                                                              $307.95
 
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━┓
-┃ Project                                                          ┃ Monthly cost ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━┫
-┃ browol/airflow-on-aks/infrastru...terraform/environments/dev/aks ┃ $304         ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━┛
+*Usage costs can be estimated by updating Infracost Cloud settings, see docs for other options.
+
+──────────────────────────────────
+18 cloud resources were detected:
+∙ 6 were estimated
+∙ 12 were free
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━┳━━━━━━━━━━━━┓
+┃ Project                                            ┃ Baseline cost ┃ Usage cost* ┃ Total cost ┃
+┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━━━╋━━━━━━━━━━━━━╋━━━━━━━━━━━━┫
+┃ main                                               ┃ $308          ┃ $0.00       ┃ $308       ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━━━┻━━━━━━━━━━━━━┻━━━━━━━━━━━━┛
 ```
 
 **Notes**:
@@ -93,12 +81,9 @@ Project: browol/airflow-on-aks/infrastructure/terraform/environments/dev/aks
 - Reducing the node SKU would significantly reduce costs.
 - Schedule the AKS shutdown on the weekend and after working hours to reduce costs by up to 26.67%.
 
-## Getting Started
+### Applications
 
-1. Configure Apache Airflow settings in the `apps/k8s/airflow/` directory.
-2. Provision the infrastructure using either Kubernetes manifests in `infrastructure/k8s/` or Terraform configurations in `infrastructure/terraform/`.
-3. Deploy Apache Airflow on AKS.
-4. Monitor and manage Airflow workflows as needed.
+See [README.md](apps/README.md)
 
 ## Contributing
 

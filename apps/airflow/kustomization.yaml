@@ -10,6 +10,7 @@ resources:
   - base/
   - netpol-egress.yaml
   - pod-airflow-init.yaml
+  - secret-tls.yaml
   - service-entries.yaml
   - sidecar.yaml
 
